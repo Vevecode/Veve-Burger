@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Composez votre Burger</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #000; /* Fond noir */
+    color: #fff; /* Texte blanc pour contraste */
+  }
+  .container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center; /* Centrer le titre */
+  }
+  .form-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center; /* Centre les éléments verticalement */
+    margin-bottom: 10px;
+  }
+  label, select, input[type="text"], input[type="checkbox"], textarea {
+    flex: 1 0 150px; /* Flex-basis de 150px, ne rétrécit pas */
+    margin: 5px;
+    padding: 8px;
+    background-color: #333; /* Fond sombre pour les inputs et labels */
+    color: #fff; /* Texte blanc */
+    border: 1px solid #444;
+    border-radius: 5px;
+  }
+  button {
+    padding: 10px 20px;
+    background-color: #4CAF50; /* Couleur du bouton */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+  #result, #history, #deleteAll {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #222; /* Fond sombre pour les sections */
+    border: 1px solid #ccc;
+  }
+  .delete-btn {
+    color: red;
+    cursor: pointer;
+  }
+  .history-controls {
+    text-align: center;
+    padding-top: 10px;
+  }
+  .error-message {
+    color: red;
+  }
+  .success-message {
+    color: green;
+  }
+  @media (max-width: 600px) {
+    .form-group {
+      flex-direction: column;
+    }
+    label, select, input[type="text"], input[type="checkbox"], textarea {
+      flex: 1 0 100%; /* Prend toute la largeur sur petits écrans */
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Composez votre burger</h1>
+  <div class="form-group">
+    <label for="name">Votre nom :</label>
+    <input type="text" id="name" placeholder="Entrez votre nom" required>
+  </div>
+  <span id="name-error" class="error-message"></span>
+  <div class="form-group">
+    <label>Quantité de steak :</label>
+    <select id="steak-quantity">
+      <option value="1">1</option>
+      <option value="2">2</option>
+    </select>
+    <label>Quantité de cheddar :</label>
+    <select id="cheddar-quantity">
+      <option value="0">0</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label><input type="checkbox" name="ingredient" value="Tomate"> Tomate</label>
+    <label><input type="checkbox" name="ingredient" value="Laitue"> Salade</label>
+    <label><input type="checkbox" name="ingredient" value="Oignon"> Oignon</label>
+  </div>
+  <div class="form-group">
+    <label for="sauce">Choix de sauce :</label>
+    <select id="sauce" onchange="toggleSauceOptions()">
+      <option value="">Sélectionnez une sauce</option>
+      <option value="Barbecue">Barbecue</option>
+      <option value="Moutarde">Moutarde</option>
+      <option value="Moutarde à l'ancienne">Moutarde à l'ancienne</option>
+      <option value="Ketchup">Ketchup</option>
+      <option value="Savora">Savora</option>
+      <option value="Mayonnaise">Mayonnaise</option>
+    </select>
+  </div>
+  <div class="form-group" id="sauceOptions" style="display: none;">
+    <label><input type="radio" name="sauce-placement" value="Pain du haut" checked> Pain du haut</label>
+    <label><input type="radio" name="sauce-placement" value="Pain du bas"> Pain du bas</label>
+    <label><input type="radio" name="sauce-placement" value="Les deux"> Les deux</label>
+  </div>
+  <div class="form-group">
+    <label for="suggestions">Vos suggestions :</label>
+    <textarea id="suggestions" placeholder="Laissez vos suggestions ici..." rows="3"></textarea>
+  </div>
+  <button onclick="submitOrder()">Soumettre votre burger</button>
+  <span id="submit-error" class="error-message"></span>
+  <span id="submit-success" class="success-message"></span>
+  <div id="result"></div>
+  <div id="history"></div>
+  <div class="history-controls" id="deleteAll">
+    <button onclick="deleteAllOrders()">Supprimer toutes les commandes</button>
+  </div>
+</div>
+
+<script>
+function toggleSauceOptions() {
+  var sauceSelect = document.getElementById('sauce');
+  var sauceOptions = document.getElementById('sauceOptions');
+  sauceOptions.style.display = sauceSelect.value ? 'flex' : 'none';
+}
+
+function submitOrder() {
+  // Effacer les messages précédents
+  document.getElementById('submit-error').textContent = '';
+  document.getElementById('submit-success').textContent = '';
+
+  const name = document.getElementById('name').value;
+  if (!name.trim()) {
+    document.getElementById('submit-error').textContent = 'Merci de renseigner votre nom';
+    return;
+  }
+
+  const suggestions = document.getElementById('suggestions').value;
+  const steakQuantity = document.getElementById('steak-quantity').value;
+  const cheddarQuantity = document.getElementById('cheddar-quantity').value;
+  const sauce = document.getElementById('sauce').value;
+  const saucePlacement = document.querySelector('input[name="sauce-placement"]:checked') ? document.querySelector('input[name="sauce-placement"]:checked').value : 'none';
+  const checkboxes = document.querySelectorAll('input[name="ingredient"]:checked');
+  const selectedIngredients = Array.from(checkboxes).map(checkbox => checkbox.value);
+  const orderSummary = 'Nom: ' + name + '<br>' +
+    'Suggestions: ' + suggestions + '<br>' +
+    'Quantité de steak: ' + steakQuantity + '<br>' +
+    'Quantité de cheddar: ' + cheddarQuantity + '<br>' +
+    'Sauce choisie: ' + sauce + ', appliquée sur: ' + saucePlacement + '<br>' +
+    'Autres ingrédients: ' + selectedIngredients.join(', ');
+
+  document.getElementById('result').innerHTML = orderSummary;
+  saveOrder(orderSummary);
+  document.getElementById('submit-success').textContent = 'Merci d\'avoir commandé.';
+}
+
+function saveOrder(order) {
+  let orders = localStorage.getItem('burgerOrders');
+  orders = orders ? JSON.parse(orders) : [];
+  orders.push(order);
+  localStorage.setItem('burgerOrders', JSON.stringify(orders));
+  showHistory();
+}
+
+function showHistory() {
+  let orders = localStorage.getItem('burgerOrders');
+  orders = orders ? JSON.parse(orders) : [];
+  let historyHtml = orders.map((order, index) => `<div>${order} <span class='delete-btn' onclick='deleteOrder(${index})'>✖</span></div>`).join('<hr>');
+  document.getElementById('history').innerHTML = historyHtml;
+}
+
+function deleteOrder(index) {
+  let orders = JSON.parse(localStorage.getItem('burgerOrders'));
+  orders.splice(index, 1);
+  localStorage.setItem('burgerOrders', JSON.stringify(orders));
+  showHistory();
+}
+
+function deleteAllOrders() {
+  localStorage.removeItem('burgerOrders');
+  showHistory();
+}
+
+window.onload = showHistory;
+</script>
+</body>
+</html>
